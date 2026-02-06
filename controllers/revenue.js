@@ -1,0 +1,366 @@
+  const Revenue = require("../models/revenue");
+
+
+  exports.addRevenueActivity = async (req, res) => {
+    try {
+      const {
+        orderNo,
+        sanctionedOrderDate,
+        disburseAmount,
+        subject,
+        details,
+      } = req.body;
+
+      if (!orderNo || !disburseAmount) {
+        return res.status(400).json({
+          success: false,
+          message: "orderNo & disburseAmount required ❌",
+        });
+      }
+
+
+
+      let attachmentName = "";
+      let attachmentUrl = "";
+
+      if (req.file) {
+        attachmentName = req.file.originalname;
+        attachmentUrl = req.file.path || req.file.secure_url;
+      }
+
+      const spend = Number(disburseAmount);
+
+      if (spend <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid disburse amount ❌",
+        });
+      }
+
+      // ✅ Find revenue
+      const revenue = await Revenue.findOne({ orderNo });
+
+      if (!revenue) {
+        return res.status(404).json({
+          success: false,
+          message: "Revenue not found ❌",
+        });
+      }
+
+      /* ---------- LAST PENDING ---------- */
+      let pendingBefore = revenue.totalRevenue;
+
+      if (revenue.activities.length > 0) {
+        pendingBefore =
+          revenue.activities[revenue.activities.length - 1].pendingAmount;
+      }
+
+      if (spend > pendingBefore) {
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient balance ❌ Remaining ₹${pendingBefore}`,
+        });
+      }
+
+      const pendingAfter = pendingBefore - spend;
+
+      /* ---------- PUSH ACTIVITY ---------- */
+      // revenue.activities.push({
+      //   orderNo,
+      //   sanctionedOrderDate,
+      //   disburseAmount: spend,
+      //   pendingAmount: pendingAfter,
+      //   subject: subject || "",
+      //   details: details || "",
+      // attachmentName,
+      //   attachmentUrl,
+      //   createdAt: new Date(),
+      // });
+
+      revenue.activities.push({
+  orderNo,
+  sanctionedOrderDate,
+  disburseAmount: spend,
+  pendingAmount: pendingAfter,
+  subject: subject || "",
+  details: details || "",
+  attachmentName,
+  attachmentUrl,
+  createdAt: new Date(),
+});
+
+      await revenue.save();
+
+      return res.status(201).json({
+        success: true,
+        message: "Activity added successfully ✅",
+        data: {
+          orderNo,
+          pendingAmount: pendingAfter,
+          latestActivity:
+            revenue.activities[revenue.activities.length - 1],
+        },
+      });
+    } catch (error) {
+      console.log("addRevenueActivity error:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Server error ❌",
+      });
+    }
+  };
+
+
+exports.getFYByOrderNo = async (req, res) => {
+  try {
+    const { orderNo } = req.params;
+
+    if (!orderNo) {
+      return res.status(400).json({
+        success: false,
+        message: "orderNo required ❌",
+      });
+    }
+
+    const revenue = await Revenue.findOne(
+      { orderNo },
+      { financialYear: 1 } // only FY fetch
+    );
+
+    if (!revenue) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found ❌",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      orderNo,
+      financialYear: revenue.financialYear,
+    });
+  } catch (error) {
+    console.log("getFYByOrderNo error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error ❌",
+    });
+  }
+};
+
+
+/* =====================================================
+   GET SANCTIONED ORDER
+===================================================== */
+exports.getSanctionedOrder = async (req, res) => {
+  try {
+    const { sanctionedOrderNo } = req.params;
+
+    if (!sanctionedOrderNo) {
+      return res.status(400).json({
+        success: false,
+        message: "sanctionedOrderNo required ❌",
+      });
+    }
+
+    let query = {};
+    if (req.user.role !== "Super Admin") {
+      query.userId = req.user.id;
+    }
+
+    const revenues = await Revenue.find({
+      ...query,
+      "activities.sanctionedOrderNo": sanctionedOrderNo,
+    }).sort({ createdAt: -1 });
+
+    if (!revenues.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Sanctioned Order No not found ❌",
+      });
+    }
+
+    const result = revenues.map(rev => {
+      const matchedActivity = rev.activities.find(
+        a => a.sanctionedOrderNo === sanctionedOrderNo
+      );
+
+      return {
+        revenueId: rev._id,
+        financialYear: rev.financialYear,
+        role: rev.role,
+        totalRevenue: rev.totalRevenue,
+        utilizedAmount: rev.utilizedAmount,
+        remainingAmount: rev.remainingAmount,
+        activity: matchedActivity,
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    console.log("getSanctionedOrder error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error ❌",
+    });
+  }
+};
+
+
+exports.updateRevenueActivityByOrderNo = async (req, res) => {
+  try {
+    const { orderNo } = req.params;
+    const {
+      disburseAmount,
+      activityName,
+      vendorBeneficiaryDetails,
+      disburseDate,
+    } = req.body;
+
+    if (!orderNo || !disburseAmount) {
+      return res.status(400).json({
+        success: false,
+        message: "orderNo & disburseAmount required ❌",
+      });
+    }
+
+    const spend = Number(disburseAmount);
+
+    if (spend <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid disburse amount ❌",
+      });
+    }
+
+    // ✅ Find revenue
+    const revenue = await Revenue.findOne({ orderNo });
+
+    if (!revenue) {
+      return res.status(404).json({
+        success: false,
+        message: "Revenue not found ❌",
+      });
+    }
+
+    if (spend > revenue.remainingAmount) {
+      return res.status(400).json({
+        success: false,
+        message: `Insufficient balance ❌ Remaining ₹${revenue.remainingAmount}`,
+      });
+    }
+
+    const pendingAfter = revenue.remainingAmount - spend;
+
+    // ✅ Push activity
+    revenue.activities.push({
+      orderNo,
+      disburseAmount: spend,
+      pendingAmount: pendingAfter,
+      activityName: activityName || "",
+      vendorBeneficiaryDetails: vendorBeneficiaryDetails || "",
+      billUcUpload: req.file ? req.file.path : "",
+      disburseDate: disburseDate || new Date(),
+    });
+
+    // ✅ Update totals
+    revenue.utilizedAmount += spend;
+    revenue.remainingAmount = pendingAfter;
+
+    await revenue.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Amount disbursed successfully ✅",
+      data: {
+        orderNo,
+        disbursedAmount: spend,
+        remainingAmount: pendingAfter,
+      },
+    });
+  } catch (error) {
+    console.log("updateRevenueActivityByOrderNo error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error ❌",
+    });
+  }
+};
+
+/* =====================================================
+   GET REVENUE
+===================================================== */
+exports.getRevenue = async (req, res) => {
+  try {
+    let query = {};
+    if (req.user.role !== "Super Admin") {
+      query.userId = req.user.id;
+    }
+
+    const data = await Revenue.find(query).sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    console.log("GET revenue error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+/* =====================================================
+   ADD REVENUE
+===================================================== */
+exports.addRevenue = async (req, res) => {
+  try {
+    const { orderNo,totalRevenue, financialYear, role, departmentName } = req.body;
+
+    if (!totalRevenue || !financialYear || !role) {
+      return res.status(400).json({
+        success: false,
+        message: "totalRevenue, role required ❌",
+      });
+    }
+
+    let attachmentName = "";
+    let attachmentUrl = "";
+
+    if (req.file) {
+      attachmentName = req.file.originalname;
+      attachmentUrl = req.file.path;
+    }
+
+    const newRevenue = await Revenue.create({
+      userId: req.user.id,
+      orderNo:orderNo,
+      totalRevenue: Number(totalRevenue),
+      financialYear,
+      departmentName,
+      role,
+      attachmentName,
+      attachmentUrl,
+      utilizedAmount: 0,
+      remainingAmount: Number(totalRevenue),
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Revenue saved ✅",
+      data: newRevenue,
+    });
+  } catch (error) {
+    console.log("POST revenue error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
