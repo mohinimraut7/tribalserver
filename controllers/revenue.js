@@ -330,7 +330,8 @@ exports.addRevenue = async (req, res) => {
     }
 
 
-const alreadyExists = await Revenue.findOne({
+
+    const alreadyExists = await Revenue.findOne({
       orderNo,
       financialYear,
     });
