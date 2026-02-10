@@ -53,6 +53,16 @@ const revenueSchema = new mongoose.Schema(
       default: "",
     },
 
+    // ADD THESE TWO FIELDS
+        excelName: {
+          type: String,
+          default: "",
+        },
+        excelUrl: {
+          type: String,
+          default: "",
+        },
+
     // 🆕 ACTIVITIES ARRAY (inside revenue itself)
     activities: [
       {
@@ -104,7 +114,8 @@ attachmentUrl: {
   type: String,
   default: "",
 },
-
+ excelName: { type: String, default: "" },  // ADD THIS
+        excelUrl: { type: String, default: "" },   // ADD THIS
 
         createdAt: {
           type: Date,

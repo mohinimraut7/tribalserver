@@ -20,6 +20,9 @@ app.use(
 app.use(express.json({ limit: "100mb" }));
 app.use(express.urlencoded({ limit: "100mb", extended: true }));
 
+app.use("/uploads/excel", express.static(path.join(process.cwd(), "uploads/excel")));
+
+
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/images", express.static(path.join(__dirname, "public/images")));
 

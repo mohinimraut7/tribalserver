@@ -1,114 +1,440 @@
-  const Revenue = require("../models/revenue");
-
-
-  exports.addRevenueActivity = async (req, res) => {
-    try {
-      const {
-        orderNo,
-        sanctionedOrderDate,
-        disburseAmount,
-        subject,
-        details,
-      } = req.body;
-
-      if (!orderNo || !disburseAmount) {
-        return res.status(400).json({
-          success: false,
-          message: "orderNo & disburseAmount required ❌",
-        });
-      }
+  // const uploadExcel = require("../middlewares/uploadExcel");
+const Revenue = require("../models/revenue");
 
 
 
-      let attachmentName = "";
-      let attachmentUrl = "";
+//   exports.addRevenueActivity = async (req, res) => {
+//     try {
 
-      if (req.file) {
-        attachmentName = req.file.originalname;
-        attachmentUrl = req.file.path || req.file.secure_url;
-      }
+//  let excelName = "";
+// let excelUrl = "";
 
-      const spend = Number(disburseAmount);
 
-      if (spend <= 0) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid disburse amount ❌",
-        });
-      }
+//       const {
+//         orderNo,
+//         sanctionedOrderDate,
+//         disburseAmount,
+//         subject,
+//         details,
+//       } = req.body;
 
-      // ✅ Find revenue
-      const revenue = await Revenue.findOne({ orderNo });
+//       if (!orderNo || !disburseAmount) {
+//         return res.status(400).json({
+//           success: false,
+//           message: "orderNo & disburseAmount required ❌",
+//         });
+//       }
 
-      if (!revenue) {
-        return res.status(404).json({
-          success: false,
-          message: "Revenue not found ❌",
-        });
-      }
 
-      /* ---------- LAST PENDING ---------- */
-      let pendingBefore = revenue.totalRevenue;
 
-      if (revenue.activities.length > 0) {
-        pendingBefore =
-          revenue.activities[revenue.activities.length - 1].pendingAmount;
-      }
+//       let attachmentName = "";
+//       let attachmentUrl = "";
 
-      if (spend > pendingBefore) {
-        return res.status(400).json({
-          success: false,
-          message: `Insufficient balance ❌ Remaining ₹${pendingBefore}`,
-        });
-      }
+//       if (req.file) {
+//         attachmentName = req.file.originalname;
+//         attachmentUrl = req.file.path || req.file.secure_url;
+//       }
 
-      const pendingAfter = pendingBefore - spend;
+//       const spend = Number(disburseAmount);
 
-      /* ---------- PUSH ACTIVITY ---------- */
-      // revenue.activities.push({
-      //   orderNo,
-      //   sanctionedOrderDate,
-      //   disburseAmount: spend,
-      //   pendingAmount: pendingAfter,
-      //   subject: subject || "",
-      //   details: details || "",
-      // attachmentName,
-      //   attachmentUrl,
-      //   createdAt: new Date(),
-      // });
+//       if (spend <= 0) {
+//         return res.status(400).json({
+//           success: false,
+//           message: "Invalid disburse amount ❌",
+//         });
+//       }
 
-      revenue.activities.push({
-  orderNo,
-  sanctionedOrderDate,
-  disburseAmount: spend,
-  pendingAmount: pendingAfter,
-  subject: subject || "",
-  details: details || "",
-  attachmentName,
-  attachmentUrl,
-  createdAt: new Date(),
-});
+//       // ✅ Find revenue
+//       const revenue = await Revenue.findOne({ orderNo });
 
-      await revenue.save();
+//       if (!revenue) {
+//         return res.status(404).json({
+//           success: false,
+//           message: "Revenue not found ❌",
+//         });
+//       }
 
-      return res.status(201).json({
-        success: true,
-        message: "Activity added successfully ✅",
-        data: {
-          orderNo,
-          pendingAmount: pendingAfter,
-          latestActivity:
-            revenue.activities[revenue.activities.length - 1],
-        },
-      });
-    } catch (error) {
-      console.log("addRevenueActivity error:", error);
-      return res.status(500).json({
+//       /* ---------- LAST PENDING ---------- */
+//       let pendingBefore = revenue.totalRevenue;
+
+//       if (revenue.activities.length > 0) {
+//         pendingBefore =
+//           revenue.activities[revenue.activities.length - 1].pendingAmount;
+//       }
+
+//       if (spend > pendingBefore) {
+//         return res.status(400).json({
+//           success: false,
+//           message: `Insufficient balance ❌ Remaining ₹${pendingBefore}`,
+//         });
+//       }
+
+//       const pendingAfter = pendingBefore - spend;
+
+//       /* ---------- PUSH ACTIVITY ---------- */
+//       // revenue.activities.push({
+//       //   orderNo,
+//       //   sanctionedOrderDate,
+//       //   disburseAmount: spend,
+//       //   pendingAmount: pendingAfter,
+//       //   subject: subject || "",
+//       //   details: details || "",
+//       // attachmentName,
+//       //   attachmentUrl,
+//       //   createdAt: new Date(),
+//       // });
+
+//       revenue.activities.push({
+//   orderNo,
+//   sanctionedOrderDate,
+//   disburseAmount: spend,
+//   pendingAmount: pendingAfter,
+//   subject: subject || "",
+//   details: details || "",
+//   excelName,
+//   excelUrl,
+//   attachmentName,
+//   attachmentUrl,
+//   createdAt: new Date(),
+// });
+
+//       await revenue.save();
+
+//       return res.status(201).json({
+//         success: true,
+//         message: "Activity added successfully ✅",
+//         data: {
+//           orderNo,
+//           pendingAmount: pendingAfter,
+//           latestActivity:
+//             revenue.activities[revenue.activities.length - 1],
+//         },
+//       });
+//     } catch (error) {
+//       console.log("addRevenueActivity error:", error);
+//       return res.status(500).json({
+//         success: false,
+//         message: "Server error ❌",
+//       });
+//     }
+//   };
+
+
+
+// exports.addRevenueActivity = async (req, res) => {
+//   try {
+//     let excelName = "";
+//     let excelUrl = "";
+//     let attachmentName = "";
+//     let attachmentUrl = "";
+
+//     const { orderNo, sanctionedOrderDate, disburseAmount, subject, details } = req.body;
+
+//     if (!orderNo || !disburseAmount) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "orderNo & disburseAmount required ❌",
+//       });
+//     }
+
+//     // ✅ req.files वापरो (fields() मुळे)
+//     if (req.files) {
+//       if (req.files.attachment?.[0]) {
+//         attachmentName = req.files.attachment[0].originalname;
+//         attachmentUrl = req.files.attachment[0].secure_url || req.files.attachment[0].path;
+//       }
+
+//       if (req.files.excelFile?.[0]) {
+//         excelName = req.files.excelFile[0].originalname;
+//         excelUrl = req.files.excelFile[0].path;
+//       }
+//     }
+
+//     const spend = Number(disburseAmount);
+
+//     if (spend <= 0) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid disburse amount ❌",
+//       });
+//     }
+
+//     const revenue = await Revenue.findOne({ orderNo });
+
+//     if (!revenue) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Revenue not found ❌",
+//       });
+//     }
+
+//     let pendingBefore = revenue.totalRevenue;
+
+//     if (revenue.activities.length > 0) {
+//       pendingBefore = revenue.activities[revenue.activities.length - 1].pendingAmount;
+//     }
+
+//     if (spend > pendingBefore) {
+//       return res.status(400).json({
+//         success: false,
+//         message: `Insufficient balance ❌ Remaining ₹${pendingBefore}`,
+//       });
+//     }
+
+//     const pendingAfter = pendingBefore - spend;
+
+//     revenue.activities.push({
+//       orderNo,
+//       sanctionedOrderDate,
+//       disburseAmount: spend,
+//       pendingAmount: pendingAfter,
+//       subject: subject || "",
+//       details: details || "",
+//       attachmentName,
+//       attachmentUrl,
+//       excelName,
+//       excelUrl,
+//       createdAt: new Date(),
+//     });
+
+//     await revenue.save();
+
+//     return res.status(201).json({
+//       success: true,
+//       message: "Activity added successfully ✅",
+//       data: {
+//         orderNo,
+//         pendingAmount: pendingAfter,
+//         latestActivity: revenue.activities[revenue.activities.length - 1],
+//       },
+//     });
+//   } catch (error) {
+//     console.log("addRevenueActivity error:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Server error ❌",
+//     });
+//   }
+// };
+
+
+
+
+
+// exports.addRevenueActivity = async (req, res) => {
+//   try {
+//     let excelName = "";
+//     let excelUrl = "";
+//     let attachmentName = "";
+//     let attachmentUrl = "";
+
+//     const { orderNo, sanctionedOrderDate, disburseAmount, subject, details } = req.body;
+
+//     if (!orderNo || !disburseAmount) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "orderNo & disburseAmount required ❌",
+//       });
+//     }
+
+//     // ✅ Handle attachment (from Cloudinary)
+//     if (req.files?.attachment?.[0]) {
+//       attachmentName = req.files.attachment[0].originalname;
+//       attachmentUrl = req.files.attachment[0].secure_url;
+//     }
+
+//     // ✅ Handle Excel file (from local disk)
+//     if (req.files?.excelFile?.[0]) {
+//       excelName = req.files.excelFile[0].originalname;
+//       const baseUrl = process.env.API_BASE_URL || "http://localhost:5000";
+//       excelUrl = `${baseUrl}/uploads/excel/${req.files.excelFile[0].filename}`;
+//     }
+
+//     // ✅ Handle single file upload (when used with .single())
+//     if (req.file && req.file.fieldname === "excelFile") {
+//       excelName = req.file.originalname;
+//       const baseUrl = process.env.API_BASE_URL || "http://localhost:5000";
+//       excelUrl = `${baseUrl}/uploads/excel/${req.file.filename}`;
+//     }
+
+//     const spend = Number(disburseAmount);
+
+//     if (spend <= 0) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid disburse amount ❌",
+//       });
+//     }
+
+//     const revenue = await Revenue.findOne({ orderNo });
+
+//     if (!revenue) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Revenue not found ❌",
+//       });
+//     }
+
+//     let pendingBefore = revenue.totalRevenue;
+
+//     if (revenue.activities.length > 0) {
+//       pendingBefore = revenue.activities[revenue.activities.length - 1].pendingAmount;
+//     }
+
+//     if (spend > pendingBefore) {
+//       return res.status(400).json({
+//         success: false,
+//         message: `Insufficient balance ❌ Remaining ₹${pendingBefore}`,
+//       });
+//     }
+
+//     const pendingAfter = pendingBefore - spend;
+
+//     revenue.activities.push({
+//       orderNo,
+//       sanctionedOrderDate,
+//       disburseAmount: spend,
+//       pendingAmount: pendingAfter,
+//       subject: subject || "",
+//       details: details || "",
+//       attachmentName,
+//       attachmentUrl,
+//       excelName,
+//       excelUrl,
+//       createdAt: new Date(),
+//     });
+
+//     await revenue.save();
+
+//     return res.status(201).json({
+//       success: true,
+//       message: "Activity added successfully ✅",
+//       data: {
+//         orderNo,
+//         pendingAmount: pendingAfter,
+//         latestActivity: revenue.activities[revenue.activities.length - 1],
+//       },
+//     });
+//   } catch (error) {
+//     console.log("addRevenueActivity error:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Server error ❌",
+//     });
+//   }
+// };
+
+
+
+exports.addRevenueActivity = async (req, res) => {
+  console.log("req>>>>>>>>>>",req.file)
+    console.log("req>>>>>>>>>>",req.files)
+  try {
+    let excelName = "";
+    let excelUrl = "";
+    let attachmentName = "";
+    let attachmentUrl = "";
+
+    const { orderNo, sanctionedOrderDate, disburseAmount, subject, details } = req.body;
+
+    if (!orderNo || !disburseAmount) {
+      return res.status(400).json({
         success: false,
-        message: "Server error ❌",
+        message: "orderNo & disburseAmount required ❌",
       });
     }
-  };
+
+    // ✅ Handle attachment (from Cloudinary)
+    if (req.files?.attachment?.[0]) {
+      attachmentName = req.files.attachment[0].originalname;
+      attachmentUrl = req.files.attachment[0].secure_url;
+    }
+
+    // ✅ Handle Excel file (from local disk)
+    if (req.files?.excelFile?.[0]) {
+      excelName = req.files.excelFile[0].originalname;
+      const baseUrl = process.env.API_BASE_URL || "http://localhost:5000";
+      excelUrl = `${baseUrl}/uploads/excel/${req.files.excelFile[0].filename}`;
+    }
+
+    // ✅ Handle single file upload (when used with .single())
+    if (req.file && req.file.fieldname === "excelFile") {
+      excelName = req.file.originalname;
+      const baseUrl = process.env.API_BASE_URL || "http://localhost:5000";
+      // Use filename if available, otherwise generate from originalname
+      const filename = req.file.filename || req.file.originalname.replace(/\s+/g, '_');
+      excelUrl = `${baseUrl}/uploads/excel/${filename}`;
+    }
+
+    const spend = Number(disburseAmount);
+
+    if (spend <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid disburse amount ❌",
+      });
+    }
+
+    const revenue = await Revenue.findOne({ orderNo });
+
+    if (!revenue) {
+      return res.status(404).json({
+        success: false,
+        message: "Revenue not found ❌",
+      });
+    }
+
+    let pendingBefore = revenue.totalRevenue;
+
+    if (revenue.activities.length > 0) {
+      pendingBefore = revenue.activities[revenue.activities.length - 1].pendingAmount;
+    }
+
+    if (spend > pendingBefore) {
+      return res.status(400).json({
+        success: false,
+        message: `Insufficient balance ❌ Remaining ₹${pendingBefore}`,
+      });
+    }
+
+    const pendingAfter = pendingBefore - spend;
+
+    revenue.activities.push({
+      orderNo,
+      sanctionedOrderDate,
+      disburseAmount: spend,
+      pendingAmount: pendingAfter,
+      subject: subject || "",
+      details: details || "",
+      attachmentName,
+      attachmentUrl,
+      excelName,
+      excelUrl,
+      createdAt: new Date(),
+    });
+
+    await revenue.save();
+
+    return res.status(201).json({
+      success: true,
+      message: "Activity added successfully ✅",
+      data: {
+        orderNo,
+        pendingAmount: pendingAfter,
+        latestActivity: revenue.activities[revenue.activities.length - 1],
+      },
+    });
+  } catch (error) {
+    console.log("addRevenueActivity error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error ❌",
+    });
+  }
+};
+
+
+
 
 
 exports.getFYByOrderNo = async (req, res) => {
