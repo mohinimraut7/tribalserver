@@ -329,6 +329,21 @@ exports.addRevenue = async (req, res) => {
       });
     }
 
+
+const alreadyExists = await Revenue.findOne({
+      orderNo,
+      financialYear,
+    });
+
+    if (alreadyExists) {
+      return res.status(409).json({
+        success: false,
+        message:
+          `Order No ${orderNo} already exists for FY ${financialYear} ❌`,
+      });
+    }
+
+
     let attachmentName = "";
     let attachmentUrl = "";
 
