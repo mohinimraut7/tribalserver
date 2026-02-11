@@ -355,11 +355,11 @@ exports.addRevenueActivity = async (req, res) => {
       excelName = req.files.excelFile[0].originalname;
 
       
-      // const baseUrl = process.env.API_BASE_URL || "http://localhost:5000";
-       const baseUrl = process.env.API_BASE_URL || "https://tribalserver.onrender.com";
+      const baseUrl = process.env.API_BASE_URL || "http://localhost:5000";
+      //  const baseUrl = process.env.API_BASE_URL || "https://tribalserver.onrender.com";
 
 
-conole.log("process.env.API_BASE_URL",process.env.API_BASE_URL)
+console.log("process.env.API_BASE_URL",process.env.API_BASE_URL)
 
       excelUrl = `${baseUrl}/uploads/excel/${req.files.excelFile[0].filename}`;
     }
