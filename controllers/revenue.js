@@ -221,12 +221,119 @@ const Revenue = require("../models/revenue");
 
 
 
+// exports.addRevenueActivity = async (req, res) => {
+//   try {
+//     // let excelName = "";
+//     // let excelUrl = "";
+//     let attachmentName = "";
+//     let attachmentUrl = "";
+
+//     const { orderNo, sanctionedOrderDate, disburseAmount, subject, details } = req.body;
+
+//     if (!orderNo || !disburseAmount) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "orderNo & disburseAmount required ❌",
+//       });
+//     }
+
+//     // ✅ Handle attachment (from Cloudinary)
+//     if (req.files?.attachment?.[0]) {
+//       attachmentName = req.files.attachment[0].originalname;
+//       attachmentUrl = req.files.attachment[0].secure_url;
+//     }
+
+//     // ✅ Handle Excel file (from local disk)
+//     // if (req.files?.excelFile?.[0]) {
+//     //   excelName = req.files.excelFile[0].originalname;
+//     //   const baseUrl = process.env.API_BASE_URL || "http://localhost:5000";
+//     //   excelUrl = `${baseUrl}/uploads/excel/${req.files.excelFile[0].filename}`;
+//     // }
+
+//     // // ✅ Handle single file upload (when used with .single())
+//     // if (req.file && req.file.fieldname === "excelFile") {
+//     //   excelName = req.file.originalname;
+//     //   const baseUrl = process.env.API_BASE_URL || "http://localhost:5000";
+//     //   excelUrl = `${baseUrl}/uploads/excel/${req.file.filename}`;
+//     // }
+
+//     const spend = Number(disburseAmount);
+
+//     if (spend <= 0) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid disburse amount ❌",
+//       });
+//     }
+
+//     const revenue = await Revenue.findOne({ orderNo });
+
+//     if (!revenue) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Revenue not found ❌",
+//       });
+//     }
+
+//     let pendingBefore = revenue.totalRevenue;
+
+//     if (revenue.activities.length > 0) {
+//       pendingBefore = revenue.activities[revenue.activities.length - 1].pendingAmount;
+//     }
+
+//     if (spend > pendingBefore) {
+//       return res.status(400).json({
+//         success: false,
+//         message: `Insufficient balance ❌ Remaining ₹${pendingBefore}`,
+//       });
+//     }
+
+//     const pendingAfter = pendingBefore - spend;
+
+//     revenue.activities.push({
+//       orderNo,
+//       sanctionedOrderDate,
+//       disburseAmount: spend,
+//       pendingAmount: pendingAfter,
+//       subject: subject || "",
+//       details: details || "",
+//       attachmentName,
+//       attachmentUrl,
+//       // excelName,
+//       // excelUrl,
+//       createdAt: new Date(),
+//     });
+
+//     await revenue.save();
+
+//     return res.status(201).json({
+//       success: true,
+//       message: "Activity added successfully ✅",
+//       data: {
+//         orderNo,
+//         pendingAmount: pendingAfter,
+//         latestActivity: revenue.activities[revenue.activities.length - 1],
+//       },
+//     });
+//   } catch (error) {
+//     console.log("addRevenueActivity error:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Server error ❌",
+//     });
+//   }
+// };
+
+
 exports.addRevenueActivity = async (req, res) => {
   try {
-    // let excelName = "";
-    // let excelUrl = "";
+
     let attachmentName = "";
     let attachmentUrl = "";
+
+    // ✅ ADD THIS
+    let excelName = "";
+    let excelUrl = "";
 
     const { orderNo, sanctionedOrderDate, disburseAmount, subject, details } = req.body;
 
@@ -243,19 +350,11 @@ exports.addRevenueActivity = async (req, res) => {
       attachmentUrl = req.files.attachment[0].secure_url;
     }
 
-    // ✅ Handle Excel file (from local disk)
-    // if (req.files?.excelFile?.[0]) {
-    //   excelName = req.files.excelFile[0].originalname;
-    //   const baseUrl = process.env.API_BASE_URL || "http://localhost:5000";
-    //   excelUrl = `${baseUrl}/uploads/excel/${req.files.excelFile[0].filename}`;
-    // }
-
-    // // ✅ Handle single file upload (when used with .single())
-    // if (req.file && req.file.fieldname === "excelFile") {
-    //   excelName = req.file.originalname;
-    //   const baseUrl = process.env.API_BASE_URL || "http://localhost:5000";
-    //   excelUrl = `${baseUrl}/uploads/excel/${req.file.filename}`;
-    // }
+    // ✅ HANDLE EXCEL (Cloudinary)
+    if (req.files?.excelFile?.[0]) {
+      excelName = req.files.excelFile[0].originalname;
+      excelUrl = req.files.excelFile[0].secure_url;
+    }
 
     const spend = Number(disburseAmount);
 
@@ -278,7 +377,8 @@ exports.addRevenueActivity = async (req, res) => {
     let pendingBefore = revenue.totalRevenue;
 
     if (revenue.activities.length > 0) {
-      pendingBefore = revenue.activities[revenue.activities.length - 1].pendingAmount;
+      pendingBefore =
+        revenue.activities[revenue.activities.length - 1].pendingAmount;
     }
 
     if (spend > pendingBefore) {
@@ -299,8 +399,11 @@ exports.addRevenueActivity = async (req, res) => {
       details: details || "",
       attachmentName,
       attachmentUrl,
-      // excelName,
-      // excelUrl,
+
+      // ✅ ADD THESE TWO
+      excelName,
+      excelUrl,
+
       createdAt: new Date(),
     });
 
@@ -312,7 +415,8 @@ exports.addRevenueActivity = async (req, res) => {
       data: {
         orderNo,
         pendingAmount: pendingAfter,
-        latestActivity: revenue.activities[revenue.activities.length - 1],
+        latestActivity:
+          revenue.activities[revenue.activities.length - 1],
       },
     });
   } catch (error) {
@@ -323,6 +427,12 @@ exports.addRevenueActivity = async (req, res) => {
     });
   }
 };
+
+
+// --------------------------------------
+
+
+
 
 
 

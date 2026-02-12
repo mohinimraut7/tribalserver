@@ -114,8 +114,9 @@ attachmentUrl: {
   type: String,
   default: "",
 },
-//  excelName: { type: String, default: "" },  
-  // excelUrl: { type: String, default: "" },   
+
+    excelName: { type: String, default: "" },
+    excelUrl: { type: String, default: "" },
 
         createdAt: {
           type: Date,
